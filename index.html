@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Daraz Style Online Shopping App</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+        }
+
+        header {
+            background: #f85606;
+            color: #fff;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .search-bar {
+            flex: 1;
+            margin: 0 1rem;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 0.5rem;
+            border-radius: 4px;
+            border: none;
+        }
+
+        .cart {
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        nav {
+            background: #fff;
+            padding: 0.5rem 1rem;
+            display: flex;
+            gap: 1rem;
+            overflow-x: auto;
+        }
+
+        nav a {
+            color: #f85606;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .products {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            padding: 1rem;
+        }
+
+        .product-card {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px #0001;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .product-card img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 6px;
+        }
+
+        .product-title {
+            font-size: 1rem;
+            font-weight: bold;
+            margin: 0.5rem 0;
+        }
+
+        .product-price {
+            color: #f85606;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .add-cart-btn {
+            background: #f85606;
+            color: #fff;
+            border: none;
+            padding: 0.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .cart-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 320px;
+            height: 100%;
+            background: #fff;
+            box-shadow: -2px 0 8px #0002;
+            z-index: 1000;
+            padding: 1rem;
+            overflow-y: auto;
+        }
+
+        .cart-modal.active {
+            display: block;
+        }
+
+        .cart-header {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+
+        .cart-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .cart-item img {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-right: 0.5rem;
+        }
+
+        .cart-item-title {
+            flex: 1;
+        }
+
+        .cart-item-remove {
+            color: #f85606;
+            cursor: pointer;
+            margin-left: 0.5rem;
+        }
+
+        .cart-total {
+            font-weight: bold;
+            margin-top: 1rem;
+        }
+
+        @media (max-width: 600px) {
+            .products {
+                grid-template-columns: 1fr;
+            }
+
+            .cart-modal {
+                width: 100vw;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <span class="logo">Daraz Clone</span>
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="Search for products...">
+        </div>
+        <span class="cart" id="cartBtn">🛒 <span id="cartCount">0</span></span>
+    </header>
+    <nav>
+        <a href="#" data-category="all">All</a>
+        <a href="#" data-category="electronics">Electronics</a>
+        <a href="#" data-category="jewelery">Jewelery</a>
+        <a href="#" data-category="men's clothing">Men</a>
+        <a href="#" data-category="women's clothing">Women</a>
+    </nav>
+    <main>
+        <div class="products" id="products"></div>
+    </main>
+    <div class="cart-modal" id="cartModal">
+        <div class="cart-header">Shopping Cart <span style="float:right;cursor:pointer;" id="closeCart">&times;</span>
+        </div>
+        <div id="cartItems"></div>
+        <div class="cart-total" id="cartTotal"></div>
+    </div>
+    <script>
+        const productsEl = document.getElementById('products');
+        const cartBtn = document.getElementById('cartBtn');
+        const cartModal = document.getElementById('cartModal');
+        const closeCart = document.getElementById('closeCart');
+        const cartItemsEl = document.getElementById('cartItems');
+        const cartTotalEl = document.getElementById('cartTotal');
+        const cartCountEl = document.getElementById('cartCount');
+        const searchInput = document.getElementById('searchInput');
+        let products = [];
+        let cart = [];
+
+        // Fetch products from Fake Store API
+        async function fetchProducts() {
+            const res = await fetch('https://fakestoreapi.com/products');
+            products = await res.json();
+            renderProducts(products);
+        }
+
+        // Render products
+        function renderProducts(list) {
+            productsEl.innerHTML = '';
+            list.forEach(product => {
+                const card = document.createElement('div');
+                card.className = 'product-card';
+                card.innerHTML = `
+                    <img src="${product.image}" alt="${product.title}">
+                    <div class="product-title">${product.title}</div>
+                    <div class="product-price">$${product.price.toFixed(2)}</div>
+                    <button class="add-cart-btn" data-id="${product.id}">Add to Cart</button>
+                `;
+                productsEl.appendChild(card);
+            });
+        }
+
+        // Add to cart
+        productsEl.addEventListener('click', e => {
+            if (e.target.classList.contains('add-cart-btn')) {
+                const id = +e.target.dataset.id;
+                const prod = products.find(p => p.id === id);
+                const item = cart.find(i => i.id === id);
+                if (item) {
+                    item.qty += 1;
+                } else {
+                    cart.push({ ...prod, qty: 1 });
+                }
+                updateCart();
+            }
+        });
+
+        // Show/hide cart modal
+        cartBtn.onclick = () => cartModal.classList.add('active');
+        closeCart.onclick = () => cartModal.classList.remove('active');
+
+        // Render cart
+        function updateCart() {
+            cartItemsEl.innerHTML = '';
+            let total = 0;
+            cart.forEach(item => {
+                total += item.price * item.qty;
+                const div = document.createElement('div');
+                div.className = 'cart-item';
+                div.innerHTML = `
+                    <img src="${item.image}" alt="${item.title}">
+                    <div class="cart-item-title">${item.title} x${item.qty}</div>
+                    <span class="cart-item-remove" data-id="${item.id}">&times;</span>
+                `;
+                cartItemsEl.appendChild(div);
+            });
+            cartTotalEl.textContent = `Total: $${total.toFixed(2)}`;
+            cartCountEl.textContent = cart.reduce((sum, i) => sum + i.qty, 0);
+        }
+
+        // Remove from cart
+        cartItemsEl.addEventListener('click', e => {
+            if (e.target.classList.contains('cart-item-remove')) {
+                const id = +e.target.dataset.id;
+                cart = cart.filter(i => i.id !== id);
+                updateCart();
+            }
+        });
+
+        // Category filter
+        document.querySelectorAll('nav a').forEach(a => {
+            a.onclick = e => {
+                e.preventDefault();
+                const cat = a.dataset.category;
+                if (cat === 'all') {
+                    renderProducts(products);
+                } else {
+                    renderProducts(products.filter(p => p.category === cat));
+                }
+            };
+        });
+
+        // Search filter
+        searchInput.oninput = () => {
+            const q = searchInput.value.toLowerCase();
+            renderProducts(products.filter(p => p.title.toLowerCase().includes(q)));
+        };
+
+        fetchProducts();
+    </script>
+</body>
+
+</html>
